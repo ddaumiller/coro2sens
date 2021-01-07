@@ -54,16 +54,32 @@ void test_can_read_mhz19_version(void) {
 void test_flicker_the_LEDs(void) {
   CRGB leds[NUM_LEDS];
   FastLED.addLeds<LED_CHIPSET, LED_PIN, LED_COLOR_ORDER>(leds, NUM_LEDS);
+  FastLED.setBrightness(50);
 
   // LED testing: this should flicker in colors!
-  for (uint8_t  b=0; b<127; b++) {
+  for (uint8_t  b=0; b<63; b++) {
     for (int l=0; l<NUM_LEDS; l++) {
-      leds[l].setHue((2-l)*b); FastLED.show();
+      leds[l].setHue((4-2*l)*b); FastLED.show();
       delay(60);
       leds[l] = CRGB::Black; FastLED.show();
       delay(30);
     }
   }
+
+  Serial.println("Check the red/yellow/green colors we'll be using!");
+  leds[0] = CRGB::DarkRed; FastLED.show();
+  delay(1000);
+  leds[0] = CRGB::Black; FastLED.show();
+  delay(30);
+  leds[0] = CRGB::Yellow; FastLED.show();
+  delay(1000);
+  leds[0] = CRGB::Black; FastLED.show();
+  delay(30);
+  leds[0] = CRGB::DarkGreen; FastLED.show();
+  delay(1000);
+  leds[0] = CRGB::Black; FastLED.show();
+  delay(30);
+
 }
 
 void test_tone32(void){
@@ -97,7 +113,6 @@ void setup() {
   RUN_TEST(test_led_builtin_pin_number);
   RUN_TEST(test_can_read_mhz19_version);
   RUN_TEST(test_flicker_the_LEDs); // this test will likely not fail automatically, but check if the LEDs go crazy.
-  RUN_TEST(test_tone32); // same here, the buzzer doesn't provide feedback to the board, but it should play a sound.
   UNITY_END(); // stop unit testing
   Serial.println("That's all folks");
 }
