@@ -71,6 +71,8 @@ ESP32 has bluetooth, for future expansion.
 - Libraries will be installed automatically.
 - There is a small test suite to help with the wiring. Run it like this:
   - `pio test`
+  The test contains automated parts that should fail if the dev-board itself or the co2 sensor would be miswired.  
+  For the LEDs and the buzzer, it will sparkle and play a few tones respectively. 
 
 ### Flash using the Arduino IDE
 I didn't try that myseld, please see the original repo for further information
