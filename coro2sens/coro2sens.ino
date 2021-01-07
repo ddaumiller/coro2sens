@@ -48,14 +48,13 @@
 
 // 1 = captive portal hotspot without internet connection, showing data when you connect with it.
 // 0 = WiFi client, showing data when accessed via IP address.
-#define WIFI_HOTSPOT_MODE 1
+#define WIFI_HOTSPOT_MODE 0
 
 // AP name when WIFI_HOTSPOT_MODE is 1
 #define WIFI_HOTSPOT_NAME "coro2sens"
 
-// Credentials when WIFI_HOTSPOT_MODE is 0
-#define WIFI_CLIENT_SSID "your WiFi name"
-#define WIFI_CLIENT_PASSWORD "*****"
+// Credentials when WIFI_HOTSPOT_MODE is 0 are being loaded from header "secrets.h"
+#include "secrets.h"
 
 // How long the graph/log in the WiFi portal should go back, in minutes.
 #define LOG_MINUTES 60
