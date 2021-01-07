@@ -1,4 +1,9 @@
-# CorO₂Sens
+# CorO₂Sens - MH-z19B variant
+
+This is a fork of https://github.com/kmetz/coro2sens to enable usage of the other mentioned
+CO₂ sensor: MH-z19b.  
+I used this board (relevant for the pins, always check your pins!): https://joy-it.net/de/products/SBC-NodeMCU-ESP32
+---
 
 Build a simple device that warns if CO₂ concentration in a room becomes a risk for COVID-19 aerosol infections.
 
@@ -18,7 +23,7 @@ You can also find a good overview of the topic by Rainer Winkler here: [Recommen
 ## Sensors
 - The sensor used here is the Sensirion SCD30 (around $50 / 40€) which is optionally augmented by a BME280 pressure sensor to improve accuracy.
 - [Look here](https://github.com/RainerWinkler/CO2-Measurement-simple) if you want to use MH-Z19B sensors.
- 
+
 
 ## Threshold values
 | LED color                 |CO₂ concentration |
@@ -29,7 +34,7 @@ You can also find a good overview of the topic by Rainer Winkler here: [Recommen
 
 Based on a [Recommendation from the REHVA](https://www.rehva.eu/fileadmin/user_upload/REHVA_COVID-19_guidance_document_V3_03082020.pdf)
 (Federation of European Heating, Ventilation and Air Conditioning associations, [rehva.eu](https://www.rehva.eu/))
-for preventing COVID-19 aerosol spread, especially in schools. 
+for preventing COVID-19 aerosol spread, especially in schools.
 
 
 ## Web server
@@ -43,59 +48,29 @@ ESP32 has bluetooth, for future expansion.
 1. [Sensirion SCD30](https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensors-co2/) I<sup>2</sup>C carbon dioxide sensor module ([mouser](https://mouser.com/ProductDetail/Sensirion/SCD30?qs=rrS6PyfT74fdywu4FxpYjQ==), [digikey](https://www.digikey.com/product-detail/en/sensirion-ag/SCD30/1649-1098-ND/8445334)) (around $50 / 40€).
 1. 1 [NeoPixel](https://www.adafruit.com/category/168) compatible RGB LED (WS2812B, like the V2 Flora RGB Smart NeoPixel LED, you can also remove one from a larger strip which might be cheaper).
 1. A 3V piezo buzzer or a small speaker.
-1. Optional: [Bosch BME280](https://www.bosch-sensortec.com/products/environmental-sensors/humidity-sensors-bme280/) I<sup>2</sup>C sensor module (like the GY-BME280 board), for  air pressure compensation, improves accuracy (less than $5 / 4€).   
-1. A nice case :) Make shure the sensor has enough air flow.
+1. Optional (i didn't include one yet): [Bosch BME280](https://www.bosch-sensortec.com/products/environmental-sensors/humidity-sensors-bme280/) I<sup>2</sup>C sensor module (like the GY-BME280 board), for  air pressure compensation, improves accuracy (less than $5 / 4€).   
+1. ~~A nice case :) Make sure the sensor has enough air flow.~~
 
 
 ### Wiring
 
-| ESP8266 pin  | ESP32 pin     | goes to                                    |
-|:-------------|:--------------|:-------------------------------------------|
-| 3V3          | 3V3           | SCD30 VIN, BME280 VIN                      |
-| 5V           | 5V            | LED +5V                                    |
-| GND          | GND           | SCD30 GND, BME280 GND, LED GND, Buzzer (-) |
-| SCL / D1     | SCL / GPIO 22 | SCD30 SCL, BME280 SCL                      |
-| SDA / D2     | SDA / GPIO 21 | SCD30 SDA, BME280 SDA                      |
-| GPIO 0 / D3  | GPIO 16       | LED DIN                                    |
-| GPIO 14 / D5 | GPIO 19       | Buzzer (+)                                 |
+| ESP32 pin | goes to                          |
+|:----------|:---------------------------------|
+| 5V        | MH-z19b VIN, LED +               |
+| GND       | MH-z19b GND, LED GND, Buzzer (-) |
+| D26       | MH-z19b Rx                       |
+| D32       | MH-z19b Tx                       |
+| D23       | LED DIN                          |
+| D19       | Buzzer (+, or "H")               |
 
 
 ### Flashing the ESP using [PlatfomIO](https://platformio.org/)
-- Simply open the project, select your env (`esp12e` for ESP8266 / `esp32dev` for ESP32) and run / upload.
+- Simply open the project, select your env (`esp12e` for ESP8266 / `nodemcu-32s` for ESP32) and run / upload.
 - Or via command line:
-  - `pio run -t -e esp12e upload` for ESP8266.
-  - `pio run -t -e esp32dev upload` for ESP32.
+  - `pio run -t -e nodemcu-32s upload` for ESP32.
 - Libraries will be installed automatically.
-  
+- There is a small test suite to help with the wiring. Run it like this:
+  - `pio test`
+
 ### Flash using the Arduino IDE
-- Install [the latest Arduino IDE](https://www.arduino.cc/en/main/software).
-- [Download the latest code](https://github.com/kmetz/coro2sens/archive/master.zip) and unzip it somewhere.
-- Open `coro2sense.ino` in the `coro2sens` sub folder in your Arduino IDE.
-- Install (or update) your board platform:  
-  (*Tools –> Board –> Board Manager...*)
-  - Install `esp8266` or `esp32`.
-- Install (or update) the following libraries using the built-in library manager:  
-  (*Tools –> Library Manager...*)
-  - For ESP8266:
-    - `SparkFun BME280`
-    - `FastLED`
-  - For ESP32:
-    - `SparkFun SCD30 Arduino Library`
-    - `SparkFun BME280`
-    - `FastLED`
-- Install the following external libraries:  
-  (download .zip file, then import it via *Sketch –> Include Library –> Add .ZIP Library...*)
-  - For ESP8266:
-    - [paulvha/scd30](https://github.com/paulvha/scd30) ([.zip](https://github.com/paulvha/scd30/archive/master.zip))
-    - [me-no-dev/ESPAsyncTCP](https://github.com/me-no-dev/ESPAsyncTCP) ([.zip](https://github.com/me-no-dev/ESPAsyncTCP/archive/master.zip))
-    - [me-no-dev/ESPAsyncWebServer](https://github.com/me-no-dev/ESPAsyncWebServer) ([.zip](https://github.com/me-no-dev/ESPAsyncWebServer/archive/master.zip))
-  - For ESP32:
-    - [lbernstone/Tone32](https://github.com/lbernstone/Tone32) ([.zip](https://github.com/lbernstone/Tone32/archive/master.zip))
-    - [me-no-dev/AsyncTCP](https://github.com/me-no-dev/AsyncTCP) ([.zip](https://github.com/me-no-dev/AsyncTCP/archive/master.zip))
-    - [me-no-dev/ESPAsyncWebServer](https://github.com/me-no-dev/ESPAsyncWebServer) ([.zip](https://github.com/me-no-dev/ESPAsyncWebServer/archive/master.zip))
-- Run & upload :)
-
-
-Please let me know of any issues you might encounter ([open a GitHub issue](https://github.com/kmetz/coro2sens/issues/new/choose) or write me on [twitter.com/kmetz](https://twitter.com/kmetz) or k@kjpm.de).
-Also, I'd be for hire for customizations.
-
+I didn't try that myseld, please see the original repo for further information
