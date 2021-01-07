@@ -16,14 +16,14 @@
 
 // LED warning light (always on, green / yellow / red).
 #if defined(ESP32)
-  #define LED_PIN 16
+  #define LED_PIN 23
 #elif defined(ESP8266)
   #define LED_PIN D3
 #endif
 #define LED_CHIPSET WS2812B
 #define LED_COLOR_ORDER GRB
 #define LED_BRIGHTNESS 42 // 0-255
-#define NUM_LEDS 1
+#define NUM_LEDS 2 // they'll all be the same color
 
 // Buzzer, activated continuously when CO2 level is critical.
 #if defined(ESP32)
@@ -63,8 +63,12 @@
 #define TIME_LABEL "1 hour"
 
 // Activity indicator LED (use the built-in LED if your board has one).
-//#define ACTIVITY_LED_PIN 5
+#define ACTIVITY_LED_PIN BUILTIN_LED
 
+// mh-z19b connection
+#define RX_PIN 32                           // Rx pin which the MHZ19 Tx pin is attached to
+#define TX_PIN 26                           // Tx pin which the MHZ19 Rx pin is attached to
+#define MHZ19_BAUDRATE 9600                 // Device to MH-Z19 Serial baudrate (should not be changed)
 // =============================================================================
 
 
@@ -79,7 +83,7 @@
 #include <SparkFunBME280.h>
 
 #if defined(ESP32)
-  #include <SparkFun_SCD30_Arduino_Library.h>
+  #include "MHZ19.h"
   #include <Tone32.h>
   #if WIFI_ENABLED
     #include <WiFi.h>
@@ -88,7 +92,7 @@
   #endif
 
 #elif defined(ESP8266)
-  #include <paulvha_SCD30.h>
+  #include "MHZ19.h"
   #if WIFI_ENABLED
     #include <ESP8266WiFi.h>
     #include <ESPAsyncTCP.h>
@@ -101,8 +105,10 @@
 #endif
 
 
-SCD30 scd30;
+MHZ19 co2sensor;
+
 uint16_t co2 = 0;
+
 unsigned long lastMeasureTime = 0;
 bool alarmHasTriggered = false;
 uint16_t co2log[LOG_SIZE] = {0}; // Ring buffer.
@@ -147,6 +153,7 @@ void alarmContinuous() {
 
 
 void setup() {
+
   Serial.begin(115200);
 
   // Initialize pins.
@@ -159,21 +166,30 @@ void setup() {
   // Initialize LED(s).
   FastLED.addLeds<LED_CHIPSET, LED_PIN, LED_COLOR_ORDER>(leds, NUM_LEDS);
   FastLED.setBrightness(LED_BRIGHTNESS);
-  FastLED.showColor(CRGB(255, 255, 255), 10);
+  FastLED.showColor(CRGB(255, 255, 55), 10);
 
   // Initialize buzzer.
   pinMode(BUZZER_PIN, OUTPUT);
 
-  // Initialize SCD30 sensor.
-  Wire.begin();
-  if (scd30.begin(Wire)) {
-    Serial.println("SCD30 CO2 sensor detected.");
+  // Initialize MH-z19b sensor.
+  HardwareSerial co2Serial(1);
+  co2Serial.begin(MHZ19_BAUDRATE, SERIAL_8N1, RX_PIN, TX_PIN); //baudrate is fix at 9600
+  // Wire.begin();
+  co2sensor.begin(co2Serial);
+
+  // check version of the sensor to ensure we're not talking to a zombie
+  char mhz19bVersion[4];
+  co2sensor.getVersion(mhz19bVersion);
+  // Only proceed if communication with sensor is established
+  if (co2sensor.errorCode == RESULT_OK) {
+    Serial.println("CO2 sensor detected.");
+    Serial.printf("[DEBUG] Firmware version: %s\n", mhz19bVersion);
+    co2sensor.autoCalibration();
   }
   else {
-    Serial.println("SCD30 CO2 sensor not detected. Please check wiring. Freezing.");
+    Serial.println("[FATAL] CO2 sensor not detected. Please check wiring. Freezing.");
     delay(UINT32_MAX);
   }
-  scd30.setMeasurementInterval(MEASURE_INTERVAL_S);
 
   // Initialize BME280 sensor.
   bme280.setI2CAddress(BME280_I2C_ADDRESS);
@@ -189,7 +205,7 @@ void setup() {
     bme280.setMode(MODE_NORMAL);
   }
   else {
-    Serial.println("BMP280 pressure sensor not detected. Please check wiring. Continuing without ambient pressure compensation.");
+    Serial.println("BME280 pressure sensor not detected. Please check wiring. Continuing without ambient pressure compensation.");
   }
 
 #if WIFI_ENABLED
@@ -239,14 +255,10 @@ void loop() {
   digitalWrite(ACTIVITY_LED_PIN, LOW);
 #endif
 
-  // Read sensors.
-  if (bme280isConnected) {
-    pressure = (uint16_t) (bme280.readFloatPressure() / 100);
-    scd30.setAmbientPressure(pressure);
-  }
-  if (scd30.dataAvailable()) {
-    co2 = scd30.getCO2();
-  }
+
+  temperature = co2sensor.getTemperature();
+  co2 = co2sensor.getCO2();
+
 
   // Average (downsample) and log CO2 values for the graph.
   co2avg = ((co2avgSamples * co2avg) + co2) / (co2avgSamples + 1);
@@ -260,8 +272,8 @@ void loop() {
 
   // Print all sensor values.
   Serial.printf(
-    "[SCD30]  temp: %.2f°C, humid: %.2f%%, CO2: %dppm\r\n",
-    scd30.getTemperature(), scd30.getHumidity(), co2
+    "[MH-z19B]  temp: %.2f°C, CO2: %dppm\r\n",
+    temperature, co2
   );
   if (bme280isConnected) {
     Serial.printf(
@@ -273,13 +285,13 @@ void loop() {
 
   // Update LED(s).
   if (co2 < CO2_WARN_PPM) {
-    FastLED.showColor(CRGB(0, 255, 0)); // Green.
+    FastLED.showColor(CRGB::DarkGreen);
   }
   else if (co2 < CO2_CRITICAL_PPM) {
-    FastLED.showColor(CRGB(255, 127, 0)); // Yellow.
+    FastLED.showColor(CRGB::Yellow);
   }
   else {
-    FastLED.showColor(CRGB(255, 0, 0)); // Red.
+    FastLED.showColor(CRGB::DarkRed);
   }
 
   // Trigger alarms.
@@ -345,14 +357,14 @@ void handleCaptivePortal(AsyncWebServerRequest *request) {
   res->printf(R"(<text style="color:black; font-size:10px" x="%d" y="%d">< %d ppm</text>)",
               4, (int) map(maxVal - CO2_WARN_PPM, 0, maxVal, 0, h) + 12, CO2_WARN_PPM);
   // Plot line.
-  res->print(R"(<path style="fill:none; stroke:black; stroke-width:2px; stroke-linejoin:round" d=")");
+  res->printf(R"(<path style="fill:none; stroke:black; stroke-width:2px; stroke-linejoin:round" d=")");
   for (uint32_t i = 0; i < LOG_SIZE; i += (LOG_SIZE / w)) {
     val = co2log[(co2logPos + i) % LOG_SIZE];
     x = (int) map(i, 0, LOG_SIZE, 0, w + (w / LOG_SIZE));
     y = h - (int) map(val, 0, maxVal, 0, h);
     res->printf("%s%d,%d", i == 0 ? "M" : "L", x, y);
   }
-  res->print(R"("/>)");
+  res->print(R"("/>")");
   res->print("</svg>");
 
   // Labels.
