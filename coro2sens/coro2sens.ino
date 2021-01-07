@@ -217,9 +217,9 @@ void setup() {
   WiFi.softAP(WIFI_HOTSPOT_NAME);
   dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
   dnsServer.start(53, "*", apIP);
-  Serial.printf("WiFi hotspot started (\"%s\")\r\n", WIFI_HOTSPOT_NAME);
+  Serial.printf("WiFi hotspot started (\"%s\")\n", WIFI_HOTSPOT_NAME);
 #else
-  Serial.println("Connecting WiFi ...");
+  Serial.printf("Connecting to WiFi %s ...\n", WIFI_CLIENT_SSID);
   WiFi.begin(WIFI_CLIENT_SSID, WIFI_CLIENT_PASSWORD);
   uint timeout = 30;
   while (timeout > 0 && WiFi.status() != WL_CONNECTED) {
@@ -227,7 +227,7 @@ void setup() {
     timeout--;
   }
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.printf("WiFi connected (%s).\r\n", WiFi.localIP().toString().c_str());
+    Serial.printf("WiFi connected (%s).\n", WiFi.localIP().toString().c_str());
   }
   else {
     Serial.println("WiFi connection failed.");
@@ -272,12 +272,12 @@ void loop() {
 
   // Print all sensor values.
   Serial.printf(
-    "[MH-z19B]  temp: %.2f°C, CO2: %dppm\r\n",
+    "[MH-z19B]  temp: %.2f°C, CO2: %dppm\n",
     temperature, co2
   );
   if (bme280isConnected) {
     Serial.printf(
-      "[BME280] temp: %.2f°C, humid: %.2f%%, press: %dhPa\r\n",
+      "[BME280] temp: %.2f°C, humid: %.2f%%, press: %dhPa\n",
       bme280.readTempC(), bme280.readFloatHumidity(), pressure
     );
   }
