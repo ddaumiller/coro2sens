@@ -108,6 +108,7 @@
 MHZ19 co2sensor;
 
 uint16_t co2 = 0;
+double temperature = 0;
 
 unsigned long lastMeasureTime = 0;
 bool alarmHasTriggered = false;
