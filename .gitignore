@@ -5,3 +5,4 @@ cmake-build-*/
 
 .clang_complete
 .gcc-flags.json
+secrets.h
