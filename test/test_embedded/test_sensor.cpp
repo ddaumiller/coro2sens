@@ -57,12 +57,12 @@ void test_flicker_the_LEDs(void) {
   FastLED.setBrightness(50);
 
   // LED testing: this should flicker in colors!
-  for (uint8_t  b=0; b<63; b++) {
+  for (uint8_t  b=0; b<32; b++) {
     for (int l=0; l<NUM_LEDS; l++) {
-      leds[l].setHue((4-2*l)*b); FastLED.show();
-      delay(60);
-      leds[l] = CRGB::Black; FastLED.show();
+      leds[l].setHue((8-4*l)*b); FastLED.show();
       delay(30);
+      leds[l] = CRGB::Black; FastLED.show();
+      delay(15);
     }
   }
 
@@ -84,21 +84,21 @@ void test_flicker_the_LEDs(void) {
 
 void test_tone32(void){
   // taken from examples at https://github.com/lbernstone/Tone32/blob/master/examples/Simple_Tone.ino
-  tone(BUZZER_PIN, NOTE_C4, 500, 0);
+  tone(BUZZER_PIN, NOTE_C4, 166, 0);
   noTone(BUZZER_PIN, 0);
-  tone(BUZZER_PIN, NOTE_D4, 500, 0);
+  tone(BUZZER_PIN, NOTE_D4, 166, 0);
   noTone(BUZZER_PIN, 0);
-  tone(BUZZER_PIN, NOTE_E4, 500, 0);
+  tone(BUZZER_PIN, NOTE_E4, 166, 0);
   noTone(BUZZER_PIN, 0);
-  tone(BUZZER_PIN, NOTE_F4, 500, 0);
+  tone(BUZZER_PIN, NOTE_F4, 166, 0);
   noTone(BUZZER_PIN, 0);
-  tone(BUZZER_PIN, NOTE_G4, 500, 0);
+  tone(BUZZER_PIN, NOTE_G4, 166, 0);
   noTone(BUZZER_PIN, 0);
-  tone(BUZZER_PIN, NOTE_A4, 500, 0);
+  tone(BUZZER_PIN, NOTE_A4, 166, 0);
   noTone(BUZZER_PIN, 0);
-  tone(BUZZER_PIN, NOTE_B4, 500, 0);
+  tone(BUZZER_PIN, NOTE_B4, 166, 0);
   noTone(BUZZER_PIN, 0);
-  tone(BUZZER_PIN, NOTE_C5, 500, 0);
+  tone(BUZZER_PIN, NOTE_C5, 166, 0);
   noTone(BUZZER_PIN, 0);
 }
 
@@ -113,6 +113,7 @@ void setup() {
   RUN_TEST(test_led_builtin_pin_number);
   RUN_TEST(test_can_read_mhz19_version);
   RUN_TEST(test_flicker_the_LEDs); // this test will likely not fail automatically, but check if the LEDs go crazy.
+  RUN_TEST(test_tone32);
   UNITY_END(); // stop unit testing
   Serial.println("That's all folks");
 }
